@@ -1,0 +1,8 @@
+00:00:00 Meet the engine
+00:01:38 Java building blocks
+00:05:11 Legal moves and reversible state
+00:07:59 Giving a position a score
+00:09:49 Thinking ahead
+00:13:50 Remembering useful work
+00:15:01 A responsive desktop app
+00:16:44 Your first experiments

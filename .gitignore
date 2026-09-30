@@ -3,3 +3,6 @@
 *.class
 *.log
 .DS_Store
+/tools/video/node_modules/
+/tools/architecture/node_modules/
+/video-output/

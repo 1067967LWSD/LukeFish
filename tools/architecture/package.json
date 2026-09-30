@@ -1,0 +1,16 @@
+{
+  "name": "lukefish-architecture-deck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Editable, source-grounded LukeFish architecture PowerPoint",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "pptxgenjs": "4.0.1"
+  }
+}

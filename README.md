@@ -170,7 +170,19 @@ reachable. No tournament clocks, Chess960, or UCI protocol are included.
 
 Start with [the learning guide](docs/LEARNING_GUIDE.md), not the deepest search
 method. It connects JavaScript concepts to Java and supplies exercises,
-breakpoint suggestions, and a sequence suitable for later narrated walkthroughs.
+breakpoint suggestions, and a suggested learning sequence.
+
+The [narrated video lesson](docs/VIDEO.md) follows the engine from input to search
+and back to the screen, teaching beginner Java with actual code excerpts,
+diagrams, local text-to-speech narration, captions, and eight chapters. Its
+editable script and optional video producer live in `tools\video`; media
+production dependencies are separate from the dependency-free Java app.
+
+**[Watch/download the video](docs/video/LukeFish-Java-Walkthrough.mp4)** or
+**[download the architecture PowerPoint](docs/LukeFish-Architecture.pptx)**.
+The editable deck shows the classes, their ownership and dependencies, move
+processing, search collaboration, and Swing thread boundaries. A local
+chaptered player and transcript are included in `docs\video`.
 
 ## Regression checks
 

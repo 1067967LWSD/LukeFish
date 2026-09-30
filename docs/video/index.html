@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inside LukeFish: Learn Java through Chess</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b1220;color:#edf4fc;font:17px/1.6 "Segoe UI",sans-serif}
+main{max-width:1460px;margin:auto;padding:30px}header{margin-bottom:24px}.eyebrow{color:#69e3b5;font-weight:700;letter-spacing:.12em;font-size:13px}
+h1{font-size:clamp(26px,4vw,42px);line-height:1.15;margin:10px 0}h2{font-size:23px}p{color:#b6c4d8}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 285px;gap:24px;align-items:start}
+video{width:100%;display:block;background:#000;border:1px solid #2b4056;border-radius:12px;aspect-ratio:16/9}
+nav{border:1px solid #2b4056;border-radius:12px;padding:18px;background:#111e31}
+nav h2{margin:0 0 12px;font-size:19px}button{font:inherit;cursor:pointer}
+nav button{display:block;width:100%;text-align:left;border:0;border-left:3px solid transparent;border-radius:5px;background:transparent;color:#b6c4d8;padding:9px 10px;margin:4px 0}
+nav button:hover,nav button.active{color:#edf4fc;background:#19343c;border-left-color:#69e3b5}
+nav time{font-size:13px;color:#69e3b5;display:block}a{color:#79caff}a:hover{color:#b5e3ff}
+.downloads{display:flex;gap:18px;flex-wrap:wrap;margin:16px 0}.note{font-size:14px}
+details{border:1px solid #2b4056;border-radius:9px;padding:14px 18px;margin:10px 0;background:#101c2e}
+summary{cursor:pointer;font-weight:600}summary button{margin-right:10px;padding:2px 8px;border:1px solid #3c665f;border-radius:5px;background:#17332f;color:#69e3b5;font-size:14px}
+details p{max-width:100ch}.source{font-size:14px}code{color:#79caff;overflow-wrap:anywhere}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #79caff;outline-offset:3px}
+#error{color:#ff929e}footer{margin-top:25px;font-size:14px;color:#8e9eb5}
+@media(max-width:850px){main{padding:16px}.layout{grid-template-columns:1fr}nav{display:grid;grid-template-columns:1fr 1fr}nav h2{grid-column:1/-1}}
+</style></head><body><main>
+<header><div class="eyebrow">LUKEFISH / JAVA CLASSROOM</div><h1>Inside LukeFish: Learn Java through Chess</h1>
+<p>19:19 &middot; Beginner lesson &middot; 1080p &middot; Local TTS narration</p></header>
+<div class="layout"><section aria-label="Video lesson">
+<video id="video" controls preload="metadata" poster="poster.jpg">
+<source src="LukeFish-Java-Walkthrough.mp4" type="video/mp4">
+<track kind="captions" src="captions.vtt" srclang="en" label="English (also visible in the picture)">
+Your browser cannot play this video. <a href="LukeFish-Java-Walkthrough.mp4">Download the MP4.</a>
+</video><p id="error" role="alert" hidden></p>
+<div class="downloads"><a href="LukeFish-Java-Walkthrough.mp4" download>Download video</a><a href="transcript.md" download>Transcript</a>
+<a href="captions.srt" download>Subtitles</a><a href="chapters.txt" download>Chapter timestamps</a></div>
+<p class="note">Captions are already visible in the video. Optional text captions are also available through the player.
+Fullscreen is recommended for reading code. This page works offline beside the downloaded MP4.</p></section>
+<nav aria-label="Video chapters"><h2>Jump to a chapter</h2>
+<button data-seek="0" data-chapter="1">
+<time>00:00</time>Meet the engine</button>
+<button data-seek="98.625" data-chapter="2">
+<time>01:38</time>Java building blocks</button>
+<button data-seek="311.4583333333333" data-chapter="3">
+<time>05:11</time>Legal moves and reversible state</button>
+<button data-seek="479.66666666666663" data-chapter="4">
+<time>07:59</time>Giving a position a score</button>
+<button data-seek="589.2916666666665" data-chapter="5">
+<time>09:49</time>Thinking ahead</button>
+<button data-seek="830.708333333333" data-chapter="6">
+<time>13:50</time>Remembering useful work</button>
+<button data-seek="901.4999999999997" data-chapter="7">
+<time>15:01</time>A responsive desktop app</button>
+<button data-seek="1004.958333333333" data-chapter="8">
+<time>16:44</time>Your first experiments</button>
+</nav></div>
+<section aria-label="Searchable lesson transcript"><h2>Follow along with the code</h2><details>
+    <summary><button data-seek="0" aria-label="Play Learn Java through chess">00:00</button>
+      Learn Java through chess</summary>
+
+    <p>Welcome to Luke Fish. In this lesson, a chess game becomes a map of Java. We will follow one move from the board, through the rules, into the computer&apos;s thinking, and back to the screen. You do not need to understand every line at once.</p><p>If you have written a little JavaScript, many ideas will feel familiar. Java adds explicit types, classes, and compilation. We will connect each idea to real code in this repository. Pause whenever you want to inspect a method or try an experiment yourself.</p></details>
+<details>
+    <summary><button data-seek="32.333333333333336" aria-label="Play Start with something you can play">00:32</button>
+      Start with something you can play</summary>
+
+    <p>This is the actual Swing application. The board accepts clicks or a coordinate move such as E two, E four. The Engine lab changes the opponent&apos;s settings. Pause lets you explore both sides. Analyze suggests a move without playing it.</p><p>The thinking panel reports depth, visited positions called nodes, and the predicted best continuation, called the principal variation. Displayed scores favor White. Positive one point zero means roughly a pawn of advantage, not a guaranteed win or a probability.</p></details>
+<details>
+    <summary><button data-seek="64.75" aria-label="Play Three packages, three jobs">01:04</button>
+      Three packages, three jobs</summary>
+
+    <p>A package groups related classes under a name. The model package describes chess: pieces, moves, positions, and game history. It does not need Swing to decide whether a move is legal. That separation makes the rules easier to test.</p><p>The engine package evaluates positions and searches for a good move. The U I package draws the board and handles interaction. Chess Frame coordinates these parts. Imports let one class use another. Notice the design principle: drawing a piece and choosing a move are different responsibilities.</p></details>
+<details>
+    <summary><button data-seek="98.625" aria-label="Play From source code to a running app">01:38</button>
+      From source code to a running app</summary>
+    <p class="source">Read: <code>src\chess\Main.java</code></p>
+    <p>Java source files compile into bytecode before the Java virtual machine runs them. The J D K includes the compiler. In Eclipse, import the existing project and run chess dot Main as a Java application. This project does not require Maven or an external chess engine.</p><p>Main is the entry point. Public makes it accessible, static means the method belongs to the class, and void means it returns no value. String brackets describes an array of command line arguments. The final block schedules window creation on Swing&apos;s event thread.</p></details>
+<details>
+    <summary><button data-seek="132.95833333333331" aria-label="Play Classes describe; objects remember">02:12</button>
+      Classes describe; objects remember</summary>
+    <p class="source">Read: <code>src\chess\model\Game.java</code></p>
+    <p>A class defines a kind of object. Calling new Game creates an instance, with its own position and history lists. A constructor has the class&apos;s name and no return type. Here, the no argument constructor delegates to another constructor using this.</p><p>Private fields keep implementation details inside the class. Other code should use methods such as play and undo to maintain the game&apos;s rules. This is encapsulation. Final on the class prevents inheritance; final on a field prevents reassigning that field. These are related restrictions, not identical meanings.</p></details>
+<details>
+    <summary><button data-seek="168.70833333333331" aria-label="Play Types turn ideas into checked data">02:48</button>
+      Types turn ideas into checked data</summary>
+    <p class="source">Read: <code>src\chess\model\Piece.java</code></p>
+    <p>Java requires declared types. Int holds whole numbers; boolean holds true or false. The compiler rejects many incompatible assignments before the game runs. These named constants make integer values meaningful. Static final is the usual pattern for constants shared by all users of a class.</p><p>Luke Fish uses a piece&apos;s sign for its color and its absolute value for its kind. A white knight is positive two; a black knight is negative two. Zero is empty. These are compact conventions, not a special chess type enforced by Java. Validation still matters.</p></details>
+<details>
+    <summary><button data-seek="205.33333333333331" aria-label="Play A chessboard fits in one array">03:25</button>
+      A chessboard fits in one array</summary>
+    <p class="source">Read: <code>src\chess\model\Square.java</code></p>
+    <p>The board is a flat array with sixty four slots. Files and ranks start at zero. Multiply the rank by eight, then add the file. E two has file four and rank one, so its index is twelve. E four becomes twenty eight.</p><p>Square dot of is a static helper: no Square object is needed. Its parameters and return value are integers. The reverse operations use remainder for the file and integer division for the rank. Naming these helpers is clearer than repeating coordinate arithmetic throughout the application.</p></details>
+<details>
+    <summary><button data-seek="238.33333333333331" aria-label="Play A Move is a value">03:58</button>
+      A Move is a value</summary>
+    <p class="source">Read: <code>src\chess\model\Move.java</code></p>
+    <p>Move is a record containing the source, destination, promotion, and flags. Java generates accessors such as from and to, plus value equality. The compact constructor checks incoming values. Each component here is an integer, so callers cannot mutate the move&apos;s contents.</p><p>For objects, double equals generally checks whether two references point to the same object. Equals can compare values. Records provide that comparison, which lets a list recognize an equivalent move. Flags combine independent facts as bits; the capture method tests whether the capture bit is present.</p></details>
+<details>
+    <summary><button data-seek="275.16666666666663" aria-label="Play Arrays, lists, and the meaning of final">04:35</button>
+      Arrays, lists, and the meaning of final</summary>
+    <p class="source">Read: <code>src\chess\model\Game.java</code></p>
+    <p>An array has a fixed length. An Array List can grow as moves are added. List is the interface, or contract; Array List is one implementation. The type inside angle brackets is a generic parameter. A list of moves cannot also contain a string.</p><p>A final list field cannot be redirected to another list, but the existing list can still change. To protect history, these accessors return List dot copy Of. It is an unmodifiable snapshot, though it does not deeply copy arbitrary elements. Here, immutable records and boxed numbers make that useful.</p></details>
+<details>
+    <summary><button data-seek="311.4583333333333" aria-label="Play Small rules become methods">05:11</button>
+      Small rules become methods</summary>
+    <p class="source">Read: <code>src\chess\model\Position.java</code></p>
+    <p>Now follow a pawn. Direction is the side to move multiplied by eight. Adding that direction advances one rank in the flat array. The if statement checks that the destination exists and is empty. A pawn on its starting rank may also advance twice.</p><p>The rest of this method handles diagonal captures, while another helper handles promotion choices. Other methods handle knights and sliding pieces. Loops and conditions are familiar, but named methods keep each rule understandable. At this stage, a candidate move may still expose its own king.</p></details>
+<details>
+    <summary><button data-seek="345.37499999999994" aria-label="Play A movement pattern is not enough">05:45</button>
+      A movement pattern is not enough</summary>
+    <p class="source">Read: <code>src\chess\model\Position.java</code></p>
+    <p>Read this enhanced for loop as: for each move in the candidate list. The method remembers which side is moving, applies a candidate, and checks that side&apos;s king. It then undoes the move before considering the next candidate.</p><p>Only safe candidates enter the legal list. Notice that the method returns data, not a screen update. Testing the resulting position handles pins and discovered checks without special code for every possible pin. Castling also checks that the king does not cross an attacked square.</p></details>
+<details>
+    <summary><button data-seek="376.24999999999994" aria-label="Play Why en passant needs the whole board">06:16</button>
+      Why en passant needs the whole board</summary>
+
+    <p>Consider this position from the learning guide. The white pawn on E five appears able to capture the black pawn en passant. That special capture moves to D six, while removing the black pawn from D five. Two different squares are involved.</p><p>But moving the white pawn clears the E file. The black rook can then attack the white king, so the capture is illegal. Make, check, and undo sees the real resulting board. This is why correct state changes must come before clever search optimizations.</p></details>
+<details>
+    <summary><button data-seek="407.49999999999994" aria-label="Play Undo must restore more than pieces">06:47</button>
+      Undo must restore more than pieces</summary>
+    <p class="source">Read: <code>src\chess\model\Position.java</code></p>
+    <p>Position is deliberately mutable: its board changes in place. Copying the entire position for every search step would create much more work. Instead, make Move returns an Undo record containing the changed information, and unmake Move restores it.</p><p>Undo must restore castling rights, the en passant square, move counters, king locations, and the hash, not merely move a piece backward. An invariant is a fact that must remain true. Here, making and unmaking a move must recover exactly the original state.</p></details>
+<details>
+    <summary><button data-seek="440.37499999999994" aria-label="Play A position is not a complete game">07:20</button>
+      A position is not a complete game</summary>
+    <p class="source">Read: <code>src\chess\model\Game.java</code></p>
+    <p>Game adds the story around a position. It validates moves, records notation, stores undo information, and detects results. An enum defines a limited set of named possibilities, such as checkmate and stalemate. Invalid input throws a typed exception rather than silently corrupting the board.</p><p>F E N is a text format for pieces, turn, castling rights, en passant, and counters. It does not contain earlier moves. Loading the same F E N does not restore repetition history. This classroom app automatically claims threefold repetition and the fifty move rule; checkmate takes precedence.</p></details>
+<details>
+    <summary><button data-seek="479.66666666666663" aria-label="Play Evaluation asks: how good is this board?">07:59</button>
+      Evaluation asks: how good is this board?</summary>
+    <p class="source">Read: <code>src\chess\engine\Evaluator.java</code></p>
+    <p>Evaluation assigns a score to a position. Material values pieces, but Luke Fish also considers placement, mobility, pawn structure, king safety, and a small turn bonus called tempo. The Breakdown record returns these components together, so the interface can explain the total.</p><p>A knight near useful central squares may receive a placement bonus. Isolated pawns can receive a penalty. These are programmed preferences, not absolute chess truth. Pure calculations and small helper methods make an evaluator easier to understand, change, and compare against known examples.</p></details>
+<details>
+    <summary><button data-seek="516.4583333333333" aria-label="Play Perspective and game phase">08:36</button>
+      Perspective and game phase</summary>
+    <p class="source">Read: <code>src\chess\engine\Evaluator.java</code></p>
+    <p>The displayed breakdown favors White. Search, however, wants the current player&apos;s perspective. Multiplying by the side to move keeps a white score unchanged and reverses it for Black. Clear conventions prevent a positive number from accidentally meaning opposite things in different places.</p><p>Evaluation also blends middlegame and endgame values using a phase weight. A king often wants shelter early and activity late. Rather than switch abruptly, the blend changes gradually as material disappears. The helper returns an integer, so Java&apos;s integer division discards any fractional remainder.</p></details>
+<details>
+    <summary><button data-seek="553.0416666666665" aria-label="Play Settings are validated snapshots">09:13</button>
+      Settings are validated snapshots</summary>
+    <p class="source">Read: <code>src\chess\engine\EngineSettings.java</code></p>
+    <p>The Engine lab creates an immutable settings record. Its constructor validates ranges immediately. A search gets one snapshot instead of repeatedly reading live controls. That makes its behavior easier to reason about, even if the user changes a spinner while it is thinking.</p><p>Depth controls the main search horizon. Time limits the thinking budget. Weights adjust evaluation preferences. Randomness affects root move selection, not recursive scores. For a fair experiment, set randomness to zero, hold the position fixed, and change just one setting at a time.</p></details>
+<details>
+    <summary><button data-seek="589.2916666666665" aria-label="Play Thinking ahead is a tree of choices">09:49</button>
+      Thinking ahead is a tree of choices</summary>
+
+    <p>Search asks a different question from evaluation: what could happen next? Imagine White has moves A and B. After A, Black can allow a score of plus thirty or plus eighty for White. A sensible opponent chooses the smaller advantage, plus thirty.</p><p>After B, suppose Black can hold White to plus ten. White prefers A&apos;s guaranteed thirty to B&apos;s ten. These are illustrative numbers, not a live engine result. One player&apos;s move is a ply. Recursion repeats this decision process at each level of the tree.</p></details>
+<details>
+    <summary><button data-seek="622.6666666666665" aria-label="Play Recursion needs a smaller problem">10:22</button>
+      Recursion needs a smaller problem</summary>
+    <p class="source">Read: <code>src\chess\engine\Engine.java</code></p>
+    <p>A recursive method calls itself on a smaller problem. Each call has its own local variables on the call stack. Here, depth decreases and ply increases. When depth reaches zero, the engine switches to quiescence, which we will explain shortly. Checkmate and stalemate are also stopping conditions.</p><p>Negamax evaluates from the player to move&apos;s perspective. After our move, it is the opponent&apos;s turn, so the returned score is negated. Good for the opponent means bad for us. The alpha and beta arguments also reverse signs and order; they describe the useful search window.</p></details>
+<details>
+    <summary><button data-seek="659.6249999999998" aria-label="Play Finish a useful answer before going deeper">10:59</button>
+      Finish a useful answer before going deeper</summary>
+    <p class="source">Read: <code>src\chess\engine\Engine.java</code></p>
+    <p>Instead of starting at the maximum depth, iterative deepening finishes shallow searches first. Each completed iteration becomes the current answer. It also suggests a promising move to try first in the next iteration, helping the deeper search work more efficiently.</p><p>If the time budget expires halfway through a depth, the engine keeps the last completed result. If no depth finishes, it still provides a legal fallback. The budget is soft because stop requests are checked at selected points, not enforced by interrupting every individual operation.</p></details>
+<details>
+    <summary><button data-seek="692.7499999999998" aria-label="Play Cleanup belongs in finally">11:32</button>
+      Cleanup belongs in finally</summary>
+    <p class="source">Read: <code>src\chess\engine\Engine.java</code></p>
+    <p>Search temporarily changes the position and repetition history. If a stop request throws an exception deep in recursion, ordinary statements after the recursive call might never run. A finally block performs cleanup while the call stack unwinds.</p><p>Here, cleanup pops the history entry and unmakes the move. This is a general Java pattern: pair an operation with guaranteed cleanup, including exceptional exits. Expected cancellation is handled separately from real failures. Do not hide every exception; unexpected problems need visible reporting.</p></details>
+<details>
+    <summary><button data-seek="727.2916666666664" aria-label="Play Skip a branch that cannot help">12:07</button>
+      Skip a branch that cannot help</summary>
+
+    <p>Return to our small tree. White already has an option worth plus thirty. Under move B, we discover that Black can hold White to plus ten. We do not need to examine every other Black reply to know that B cannot improve White&apos;s decision.</p><p>Alpha and beta express these useful bounds. When the window closes, the code stops searching that branch. This is not random guessing. Given the same depth and evaluation rules, correct pruning preserves the score. Better move ordering often lets the engine discover these cutoffs sooner.</p></details>
+<details>
+    <summary><button data-seek="760.4999999999998" aria-label="Play Good ordering makes pruning useful">12:40</button>
+      Good ordering makes pruning useful</summary>
+    <p class="source">Read: <code>src\chess\engine\Engine.java</code></p>
+    <p>This lambda takes a move and produces an ordering score. The comparator sorts moves by that score, reversed so promising candidates come first. Lambdas let Java pass behavior into another method, much like an arrow function used as a callback in JavaScript.</p><p>Luke Fish prioritizes a preferred move, promotions, and captures, then uses remembered cutoff moves and a history heuristic. It also uses principal variation search: probe later moves with a narrow window, then search more fully if needed. These optimize searching; they do not redefine legal chess.</p></details>
+<details>
+    <summary><button data-seek="795.4166666666664" aria-label="Play Do not stop in the middle of an exchange">13:15</button>
+      Do not stop in the middle of an exchange</summary>
+    <p class="source">Read: <code>src\chess\engine\Engine.java</code></p>
+    <p>Imagine evaluating immediately after winning a piece, before the opponent recaptures. The position can look misleadingly good. Quiescence follows captures and promotions beyond the ordinary depth limit, subject to its configured extension budget and the engine&apos;s safety limits.</p><p>When not in check, the current evaluation can serve as a baseline called standing pat. In check, doing nothing is not legal. The engine must consider evasions, including quiet moves, even when the capture extension is set to zero. Terminal positions are checked before trusting an evaluation.</p></details>
+<details>
+    <summary><button data-seek="830.708333333333" aria-label="Play A compact fingerprint for a position">13:50</button>
+      A compact fingerprint for a position</summary>
+    <p class="source">Read: <code>src\chess\model\Position.java</code></p>
+    <p>Different move orders can lead to the same position. To recognize positions quickly, Luke Fish builds a sixty four bit fingerprint called a Zobrist key. Java&apos;s long type holds it. Bitwise exclusive or combines piece and square keys; applying the same key twice cancels that contribution.</p><p>The full repetition key also includes the turn, castling rights, and legally available en passant. Move counters are not part of repetition identity. Hashing is fast, but not mathematically collision free. This is a compact lookup tool, not a perfect proof that two positions are identical.</p></details>
+<details>
+    <summary><button data-seek="867.208333333333" aria-label="Play A cached score has conditions">14:27</button>
+      A cached score has conditions</summary>
+    <p class="source">Read: <code>src\chess\engine\TranspositionTable.java</code></p>
+    <p>The transposition table stores previous search information in a bounded array. Its entries include depth, score, a bound type, and the best move. A cutoff may prove only a lower or upper bound, so treating every stored number as exact would be incorrect.</p><p>The engine also checks the halfmove clock and a repetition history fingerprint before reusing a score. Identical boards can have different draw futures. A remembered move can still help ordering when that context differs. The lesson is broader than chess: cache validity depends on all relevant inputs.</p></details>
+<details>
+    <summary><button data-seek="901.4999999999997" aria-label="Play The board reports; the controller decides">15:01</button>
+      The board reports; the controller decides</summary>
+    <p class="source">Read: <code>src\chess\ui\ChessFrame.java</code></p>
+    <p>Board Panel extends Swing&apos;s J Panel, reusing the component framework and specializing painting and input. It reports requested squares through a callback; it cannot independently play a move. The method reference with two colons passes Chess Frame&apos;s request Board Move method as that callback.</p><p>The coordinate text field uses an action listener lambda. It asks the model for a legal move, then asks the controller to play it. An invalid move becomes a helpful input message. Painting, input handling, and rule validation remain separate even though the player experiences one action.</p></details>
+<details>
+    <summary><button data-seek="937.208333333333" aria-label="Play Keep thinking off the UI thread">15:37</button>
+      Keep thinking off the UI thread</summary>
+
+    <p>Swing has an event dispatch thread, often called the E D T. If a long search ran there, clicks and painting would freeze. Chess Frame starts a Swing Worker instead. The worker searches a copied position using immutable settings and a history snapshot.</p><p>Do in Background performs computation on a background thread. Published progress reaches process on the event thread, and done handles completion there too. The UI and search do not mutate the same position. Ownership and message passing are often simpler than putting locks around every operation.</p></details>
+<details>
+    <summary><button data-seek="971.083333333333" aria-label="Play Cancellation needs a freshness check">16:11</button>
+      Cancellation needs a freshness check</summary>
+    <p class="source">Read: <code>src\chess\ui\ChessFrame.java</code></p>
+    <p>Stopping a worker is not enough by itself. A result may already be finishing when the user chooses Undo or New game. Chess Frame increments a revision number. A worker remembers its starting revision and rejects completion if that revision is no longer current.</p><p>Atomic Boolean carries the cooperative stop request between threads. Move now sets that signal but preserves the usable result. Undo also cancels and invalidates the worker. These are intentionally different behaviors: one wants the best completed move; the other wants no old move applied at all.</p></details>
+<details>
+    <summary><button data-seek="1004.958333333333" aria-label="Play Follow e2e4 from end to end">16:44</button>
+      Follow e2e4 from end to end</summary>
+
+    <p>Put the pieces together. The player enters E two, E four. Square helpers interpret coordinates. Legal move generation finds the matching Move record. Game applies it and updates history and results. Chess Frame refreshes the display and decides whether the computer should respond.</p><p>A copied position enters search. Recursive exploration calls evaluation, uses ordering and caching, and eventually returns a Search Result record. Back on the event thread, the revision check protects the live game before the result is played. Each boundary has a clear Java type and a clear responsibility.</p></details>
+<details>
+    <summary><button data-seek="1042.833333333333" aria-label="Play Tests are executable explanations">17:22</button>
+      Tests are executable explanations</summary>
+    <p class="source">Read: <code>test\chess\ChessTests.java</code></p>
+    <p>Perft counts legal move sequences without search pruning or draw adjudication. From the starting position, the first four counts are twenty, four hundred, eight thousand nine hundred two, and one hundred ninety seven thousand two hundred eighty one. Those precise numbers reveal subtle rule mistakes.</p><p>Other tests verify undo restoration, position hashes, special moves, and agreement with a simpler reference search. Think of a test as an executable promise. If move counts change unexpectedly, inspect legality and make or unmake before adjusting evaluation weights. A stronger sounding preference cannot fix a broken rule.</p></details>
+<details>
+    <summary><button data-seek="1081.9999999999998" aria-label="Play Debug one small question at a time">18:02</button>
+      Debug one small question at a time</summary>
+
+    <p>Set a breakpoint in Square dot parse and enter a move. Inspect the input string and resulting indices. Next, stop in make Move and compare the board before and after. In Eclipse, F five steps in, F six steps over, and F eight resumes.</p><p>Use a conditional breakpoint to focus on one source square. Search time still passes while the debugger is paused, so start shallow and allow a larger budget. Model tests are better for leisurely stepping. Read the first compiler error first; later errors may simply be consequences.</p></details>
+<details>
+    <summary><button data-seek="1116.8749999999998" aria-label="Play Make one prediction. Change one thing.">18:36</button>
+      Make one prediction. Change one thing.</summary>
+
+    <p>Try this experiment: analyze the same position with move ordering enabled and disabled. Keep depth, evaluation, and quiescence fixed, with randomness zero and enough time to finish. At the same completed depth, scores should agree, though tied best moves can differ. Compare visited nodes, not just elapsed time.</p><p>Then make one small code change and add a focused check. You have now seen types, objects, records, collections, loops, recursion, exceptions, callbacks, and concurrency working together. Luke Fish is a classical educational engine, not Stockfish. Its greatest feature is that you can understand and change the system yourself.</p></details></section>
+<footer>Actual repository excerpts and application capture. Search trees are labeled teaching examples.
+No cloud speech service or external chess engine was used.</footer>
+</main><script>
+const video=document.querySelector('#video');
+const error=document.querySelector('#error');
+document.querySelectorAll('[data-seek]').forEach(button=>button.addEventListener('click',async event=>{
+  event.preventDefault();
+  video.currentTime=Number(button.dataset.seek);
+  video.scrollIntoView({behavior:'smooth',block:'center'});
+  try{await video.play();error.hidden=true;}catch(problem){error.textContent='Playback could not start: '+problem.message;error.hidden=false;}
+}));
+const chapters=[...document.querySelectorAll('[data-chapter]')];
+video.addEventListener('timeupdate',()=>{
+  const active=chapters.findLast(button=>Number(button.dataset.seek)<=video.currentTime+.1);
+  for(const button of chapters){button.classList.toggle('active',button===active);button.setAttribute('aria-current',button===active?'true':'false');}
+});
+video.addEventListener('error',()=>{error.textContent='Video playback failed. Download the MP4, or serve this folder with the preview command.';error.hidden=false;});
+</script></body></html>

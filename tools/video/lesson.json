@@ -1,0 +1,651 @@
+{
+  "title": "Inside LukeFish: Learn Java through Chess",
+  "voice": "Microsoft David Desktop",
+  "rate": 1,
+  "chapters": [
+    "Meet the engine",
+    "Java building blocks",
+    "Legal moves and reversible state",
+    "Giving a position a score",
+    "Thinking ahead",
+    "Remembering useful work",
+    "A responsive desktop app",
+    "Your first experiments"
+  ],
+  "scenes": [
+    {
+      "id": "welcome",
+      "chapter": 1,
+      "title": "Learn Java through chess",
+      "subtitle": "An inside-out tour of LukeFish, built from this repository.",
+      "visual": "hero",
+      "cards": [
+        ["A playable classroom", "A real Java app, with its own chess rules and thinking algorithm."],
+        ["One move, many ideas", "Follow the data. Learn the Java concept at each stop."]
+      ],
+      "beats": [
+        "Welcome to Luke Fish. In this lesson, a chess game becomes a map of Java. We will follow one move from the board, through the rules, into the computer's thinking, and back to the screen. You do not need to understand every line at once.",
+        "If you have written a little JavaScript, many ideas will feel familiar. Java adds explicit types, classes, and compilation. We will connect each idea to real code in this repository. Pause whenever you want to inspect a method or try an experiment yourself."
+      ]
+    },
+    {
+      "id": "app",
+      "chapter": 1,
+      "title": "Start with something you can play",
+      "subtitle": "Actual LukeFish interface, rendered by the repository's UI smoke check.",
+      "visual": "app",
+      "cards": [
+        ["Board + Engine lab", "Play a move, pause the engine, or change how it thinks."],
+        ["Read the thinking", "Depth, nodes, score, and PV describe a completed search."]
+      ],
+      "beats": [
+        "This is the actual Swing application. The board accepts clicks or a coordinate move such as E two, E four. The Engine lab changes the opponent's settings. Pause lets you explore both sides. Analyze suggests a move without playing it.",
+        "The thinking panel reports depth, visited positions called nodes, and the predicted best continuation, called the principal variation. Displayed scores favor White. Positive one point zero means roughly a pawn of advantage, not a guaranteed win or a probability."
+      ]
+    },
+    {
+      "id": "architecture",
+      "chapter": 1,
+      "title": "Three packages, three jobs",
+      "subtitle": "Separate the rules, the decisions, and the presentation.",
+      "visual": "architecture",
+      "cards": [
+        ["model", "Pieces, moves, board state, rules, and game history."],
+        ["engine + ui", "Search chooses. Swing displays and coordinates."]
+      ],
+      "beats": [
+        "A package groups related classes under a name. The model package describes chess: pieces, moves, positions, and game history. It does not need Swing to decide whether a move is legal. That separation makes the rules easier to test.",
+        "The engine package evaluates positions and searches for a good move. The U I package draws the board and handles interaction. Chess Frame coordinates these parts. Imports let one class use another. Notice the design principle: drawing a piece and choosing a move are different responsibilities."
+      ]
+    },
+    {
+      "id": "startup",
+      "chapter": 2,
+      "title": "From source code to a running app",
+      "subtitle": "Start in src\\chess\\Main.java; use a JDK version 17 or newer.",
+      "source": {
+        "file": "src\\chess\\Main.java",
+        "slices": [
+          {"anchor": "public static void main(String[] args)", "count": 1},
+          {"anchor": "configureAppearance();", "count": 1},
+          {"anchor": "SwingUtilities.invokeLater(() -> {", "count": 4}
+        ]
+      },
+      "cards": [
+        ["Compile, then run", "javac checks Java source and emits bytecode. The JVM runs it."],
+        ["The entry point", "public static void main(String[] args) starts the application."]
+      ],
+      "beats": [
+        "Java source files compile into bytecode before the Java virtual machine runs them. The J D K includes the compiler. In Eclipse, import the existing project and run chess dot Main as a Java application. This project does not require Maven or an external chess engine.",
+        "Main is the entry point. Public makes it accessible, static means the method belongs to the class, and void means it returns no value. String brackets describes an array of command line arguments. The final block schedules window creation on Swing's event thread."
+      ]
+    },
+    {
+      "id": "objects",
+      "chapter": 2,
+      "title": "Classes describe; objects remember",
+      "subtitle": "A Game object owns the state of one game.",
+      "source": {
+        "file": "src\\chess\\model\\Game.java",
+        "slices": [
+          {"anchor": "public final class Game", "count": 5},
+          {"anchor": "public Game()", "count": 3},
+          {"anchor": "public Game(Position position)", "count": 5}
+        ]
+      },
+      "cards": [
+        ["new Game()", "A constructor initializes a new object with its own fields."],
+        ["Encapsulation", "private fields keep state changes behind named operations."]
+      ],
+      "beats": [
+        "A class defines a kind of object. Calling new Game creates an instance, with its own position and history lists. A constructor has the class's name and no return type. Here, the no argument constructor delegates to another constructor using this.",
+        "Private fields keep implementation details inside the class. Other code should use methods such as play and undo to maintain the game's rules. This is encapsulation. Final on the class prevents inheritance; final on a field prevents reassigning that field. These are related restrictions, not identical meanings."
+      ]
+    },
+    {
+      "id": "pieces",
+      "chapter": 2,
+      "title": "Types turn ideas into checked data",
+      "subtitle": "Piece.java uses small integers, not pictures, to represent pieces.",
+      "source": {
+        "file": "src\\chess\\model\\Piece.java",
+        "slices": [
+          {"anchor": "public static final int EMPTY", "count": 9},
+          {"anchor": "public static int color(int piece)", "count": 3}
+        ]
+      },
+      "cards": [
+        ["int and boolean", "Integers represent pieces and squares. Booleans represent conditions."],
+        ["Sign = color", "+2 is a white knight. -2 is a black knight. 0 is empty."]
+      ],
+      "beats": [
+        "Java requires declared types. Int holds whole numbers; boolean holds true or false. The compiler rejects many incompatible assignments before the game runs. These named constants make integer values meaningful. Static final is the usual pattern for constants shared by all users of a class.",
+        "Luke Fish uses a piece's sign for its color and its absolute value for its kind. A white knight is positive two; a black knight is negative two. Zero is empty. These are compact conventions, not a special chess type enforced by Java. Validation still matters."
+      ]
+    },
+    {
+      "id": "coordinates",
+      "chapter": 2,
+      "title": "A chessboard fits in one array",
+      "subtitle": "Zero-based files and ranks turn coordinates into an index.",
+      "visual": "coordinates",
+      "source": {
+        "file": "src\\chess\\model\\Square.java",
+        "slices": [
+          {"anchor": "public static int of(int file, int rank)", "count": 6}
+        ]
+      },
+      "cards": [
+        ["rank * 8 + file", "a1 is 0. e2 is 12. e4 is 28. h8 is 63."],
+        ["Fixed-size storage", "Position stores 64 integer elements in int[] board."]
+      ],
+      "beats": [
+        "The board is a flat array with sixty four slots. Files and ranks start at zero. Multiply the rank by eight, then add the file. E two has file four and rank one, so its index is twelve. E four becomes twenty eight.",
+        "Square dot of is a static helper: no Square object is needed. Its parameters and return value are integers. The reverse operations use remainder for the file and integer division for the rank. Naming these helpers is clearer than repeating coordinate arithmetic throughout the application."
+      ]
+    },
+    {
+      "id": "records",
+      "chapter": 2,
+      "title": "A Move is a value",
+      "subtitle": "Records reduce boilerplate without removing validation.",
+      "source": {
+        "file": "src\\chess\\model\\Move.java",
+        "slices": [
+          {"anchor": "public record Move(", "count": 5},
+          {"anchor": "public Move {", "count": 4},
+          {"anchor": "public boolean isCapture()", "count": 3}
+        ]
+      },
+      "cards": [
+        ["Generated for you", "Constructor, accessors, equals(), hashCode(), and a default toString()."],
+        ["Value equality", "Two moves with the same components compare equal with equals()."]
+      ],
+      "beats": [
+        "Move is a record containing the source, destination, promotion, and flags. Java generates accessors such as from and to, plus value equality. The compact constructor checks incoming values. Each component here is an integer, so callers cannot mutate the move's contents.",
+        "For objects, double equals generally checks whether two references point to the same object. Equals can compare values. Records provide that comparison, which lets a list recognize an equivalent move. Flags combine independent facts as bits; the capture method tests whether the capture bit is present."
+      ]
+    },
+    {
+      "id": "collections",
+      "chapter": 2,
+      "title": "Arrays, lists, and the meaning of final",
+      "subtitle": "Choose the collection that matches the job.",
+      "source": {
+        "file": "src\\chess\\model\\Game.java",
+        "slices": [
+          {"anchor": "private final List<Position.Undo>", "count": 3},
+          {"anchor": "public List<PlayedMove> moves()", "count": 3},
+          {"anchor": "public List<Long> positionKeys()", "count": 3}
+        ]
+      },
+      "cards": [
+        ["List<Move>", "A growable collection whose elements must be moves."],
+        ["final is not a freeze", "A final reference can still point to a mutable list or array."]
+      ],
+      "beats": [
+        "An array has a fixed length. An Array List can grow as moves are added. List is the interface, or contract; Array List is one implementation. The type inside angle brackets is a generic parameter. A list of moves cannot also contain a string.",
+        "A final list field cannot be redirected to another list, but the existing list can still change. To protect history, these accessors return List dot copy Of. It is an unmodifiable snapshot, though it does not deeply copy arbitrary elements. Here, immutable records and boxed numbers make that useful."
+      ]
+    },
+    {
+      "id": "pawn",
+      "chapter": 3,
+      "title": "Small rules become methods",
+      "subtitle": "Position.addPawnMoves handles the ordinary pawn advance.",
+      "source": {
+        "file": "src\\chess\\model\\Position.java",
+        "slices": [
+          {"anchor": "private void addPawnMoves(", "count": 11}
+        ]
+      },
+      "cards": [
+        ["Conditions", "Check the board boundary, the empty square, and the starting rank."],
+        ["Separate responsibilities", "Pawn, knight, sliding-piece, and castling helpers generate candidates."]
+      ],
+      "beats": [
+        "Now follow a pawn. Direction is the side to move multiplied by eight. Adding that direction advances one rank in the flat array. The if statement checks that the destination exists and is empty. A pawn on its starting rank may also advance twice.",
+        "The rest of this method handles diagonal captures, while another helper handles promotion choices. Other methods handle knights and sliding pieces. Loops and conditions are familiar, but named methods keep each rule understandable. At this stage, a candidate move may still expose its own king."
+      ]
+    },
+    {
+      "id": "legality",
+      "chapter": 3,
+      "title": "A movement pattern is not enough",
+      "subtitle": "Legal moves must also leave the moving side's king safe.",
+      "source": {
+        "file": "src\\chess\\model\\Position.java",
+        "slices": [
+          {"anchor": "public List<Move> legalMoves()", "count": 13}
+        ]
+      },
+      "cards": [
+        ["Generate candidates", "pseudoLegalMoves follows each piece's movement rules."],
+        ["Try, check, restore", "Make the move, test the king, undo, then keep safe candidates."]
+      ],
+      "beats": [
+        "Read this enhanced for loop as: for each move in the candidate list. The method remembers which side is moving, applies a candidate, and checks that side's king. It then undoes the move before considering the next candidate.",
+        "Only safe candidates enter the legal list. Notice that the method returns data, not a screen update. Testing the resulting position handles pins and discovered checks without special code for every possible pin. Castling also checks that the king does not cross an attacked square."
+      ]
+    },
+    {
+      "id": "pin",
+      "chapter": 3,
+      "title": "Why en passant needs the whole board",
+      "subtitle": "Teaching diagram: the e5 pawn shields the white king from the e8 rook.",
+      "visual": "pin",
+      "cards": [
+        ["Before", "White pawn e5 blocks the rook's line toward king e1."],
+        ["After the candidate", "e5-d6 removes d5's pawn and exposes the king. Reject it."]
+      ],
+      "beats": [
+        "Consider this position from the learning guide. The white pawn on E five appears able to capture the black pawn en passant. That special capture moves to D six, while removing the black pawn from D five. Two different squares are involved.",
+        "But moving the white pawn clears the E file. The black rook can then attack the white king, so the capture is illegal. Make, check, and undo sees the real resulting board. This is why correct state changes must come before clever search optimizations."
+      ]
+    },
+    {
+      "id": "undo",
+      "chapter": 3,
+      "title": "Undo must restore more than pieces",
+      "subtitle": "Position.Undo is a compact record of everything needed to reverse a move.",
+      "source": {
+        "file": "src\\chess\\model\\Position.java",
+        "slices": [
+          {"anchor": "public record Undo(", "count": 4},
+          {"anchor": "castlingRights = undo.castlingRights();", "count": 8}
+        ]
+      },
+      "cards": [
+        ["Mutable working position", "Search makes a move and then reverses it."],
+        ["Restoration invariant", "Pieces, rights, counters, kings, turn, and hash must all agree."]
+      ],
+      "beats": [
+        "Position is deliberately mutable: its board changes in place. Copying the entire position for every search step would create much more work. Instead, make Move returns an Undo record containing the changed information, and unmake Move restores it.",
+        "Undo must restore castling rights, the en passant square, move counters, king locations, and the hash, not merely move a piece backward. An invariant is a fact that must remain true. Here, making and unmaking a move must recover exactly the original state."
+      ]
+    },
+    {
+      "id": "game",
+      "chapter": 3,
+      "title": "A position is not a complete game",
+      "subtitle": "Game adds history, notation, results, and user-facing validation.",
+      "source": {
+        "file": "src\\chess\\model\\Game.java",
+        "slices": [
+          {"anchor": "public PlayedMove play(Move move)", "count": 8},
+          {"anchor": "public enum EndReason", "count": 4}
+        ]
+      },
+      "cards": [
+        ["Validate at the boundary", "Game.play rejects illegal input before changing the live game."],
+        ["History matters", "FEN saves a position, not earlier repetitions. An enum names game outcomes."]
+      ],
+      "beats": [
+        "Game adds the story around a position. It validates moves, records notation, stores undo information, and detects results. An enum defines a limited set of named possibilities, such as checkmate and stalemate. Invalid input throws a typed exception rather than silently corrupting the board.",
+        "F E N is a text format for pieces, turn, castling rights, en passant, and counters. It does not contain earlier moves. Loading the same F E N does not restore repetition history. This classroom app automatically claims threefold repetition and the fifty move rule; checkmate takes precedence."
+      ]
+    },
+    {
+      "id": "evaluation",
+      "chapter": 4,
+      "title": "Evaluation asks: how good is this board?",
+      "subtitle": "A transparent set of preferences, not a neural network or a proof.",
+      "source": {
+        "file": "src\\chess\\engine\\Evaluator.java",
+        "slices": [
+          {"anchor": "private static final int[] MID_VALUE", "count": 3},
+          {"anchor": "public record Breakdown(", "count": 6}
+        ]
+      },
+      "cards": [
+        ["Explainable components", "Material, placement, mobility, pawn structure, king safety, and tempo."],
+        ["Centipawns", "100 cp is roughly one pawn. A preference is not a guaranteed result."]
+      ],
+      "beats": [
+        "Evaluation assigns a score to a position. Material values pieces, but Luke Fish also considers placement, mobility, pawn structure, king safety, and a small turn bonus called tempo. The Breakdown record returns these components together, so the interface can explain the total.",
+        "A knight near useful central squares may receive a placement bonus. Isolated pawns can receive a penalty. These are programmed preferences, not absolute chess truth. Pure calculations and small helper methods make an evaluator easier to understand, change, and compare against known examples."
+      ]
+    },
+    {
+      "id": "perspective",
+      "chapter": 4,
+      "title": "Perspective and game phase",
+      "subtitle": "The same number must have a clearly defined meaning.",
+      "source": {
+        "file": "src\\chess\\engine\\Evaluator.java",
+        "slices": [
+          {"anchor": "public static int evaluate(", "count": 5},
+          {"anchor": "private static int blend(", "count": 3}
+        ]
+      },
+      "cards": [
+        ["White outside; mover inside", "The UI favors White. Search evaluates for the side to move."],
+        ["Blend instead of switch", "Middlegame and endgame preferences change gradually with material."]
+      ],
+      "beats": [
+        "The displayed breakdown favors White. Search, however, wants the current player's perspective. Multiplying by the side to move keeps a white score unchanged and reverses it for Black. Clear conventions prevent a positive number from accidentally meaning opposite things in different places.",
+        "Evaluation also blends middlegame and endgame values using a phase weight. A king often wants shelter early and activity late. Rather than switch abruptly, the blend changes gradually as material disappears. The helper returns an integer, so Java's integer division discards any fractional remainder."
+      ]
+    },
+    {
+      "id": "settings",
+      "chapter": 4,
+      "title": "Settings are validated snapshots",
+      "subtitle": "Changing a control should not mutate an active recursive search.",
+      "source": {
+        "file": "src\\chess\\engine\\EngineSettings.java",
+        "slices": [
+          {"anchor": "public record EngineSettings(", "count": 3},
+          {"anchor": "public EngineSettings {", "count": 5}
+        ]
+      },
+      "cards": [
+        ["Constructor validation", "Depth, time, quiescence, randomness, and weights have allowed ranges."],
+        ["One controlled experiment", "Hold the position and other settings constant. Change one idea."]
+      ],
+      "beats": [
+        "The Engine lab creates an immutable settings record. Its constructor validates ranges immediately. A search gets one snapshot instead of repeatedly reading live controls. That makes its behavior easier to reason about, even if the user changes a spinner while it is thinking.",
+        "Depth controls the main search horizon. Time limits the thinking budget. Weights adjust evaluation preferences. Randomness affects root move selection, not recursive scores. For a fair experiment, set randomness to zero, hold the position fixed, and change just one setting at a time."
+      ]
+    },
+    {
+      "id": "tree",
+      "chapter": 5,
+      "title": "Thinking ahead is a tree of choices",
+      "subtitle": "Teaching example: all leaf scores shown here favor White.",
+      "visual": "tree",
+      "cards": [
+        ["Assume a strong reply", "For each White move, Black chooses the continuation worst for White."],
+        ["Choose the best guarantee", "A guarantees +30. B guarantees +10. White chooses A."]
+      ],
+      "beats": [
+        "Search asks a different question from evaluation: what could happen next? Imagine White has moves A and B. After A, Black can allow a score of plus thirty or plus eighty for White. A sensible opponent chooses the smaller advantage, plus thirty.",
+        "After B, suppose Black can hold White to plus ten. White prefers A's guaranteed thirty to B's ten. These are illustrative numbers, not a live engine result. One player's move is a ply. Recursion repeats this decision process at each level of the tree."
+      ]
+    },
+    {
+      "id": "recursion",
+      "chapter": 5,
+      "title": "Recursion needs a smaller problem",
+      "subtitle": "Engine.negamax searches the opponent's position, then reverses the score.",
+      "source": {
+        "file": "src\\chess\\engine\\Engine.java",
+        "slices": [
+          {"anchor": "private int negamax(", "count": 9},
+          {"anchor": "score = -negamax(depth - 1, -beta, -alpha, ply + 1);", "occurrence": 1, "count": 1}
+        ]
+      },
+      "cards": [
+        ["A new call frame", "Each call has its own depth, window, ply, and local variables."],
+        ["A stopping condition", "Depth decreases. Terminal positions end. Quiescence handles the horizon."]
+      ],
+      "beats": [
+        "A recursive method calls itself on a smaller problem. Each call has its own local variables on the call stack. Here, depth decreases and ply increases. When depth reaches zero, the engine switches to quiescence, which we will explain shortly. Checkmate and stalemate are also stopping conditions.",
+        "Negamax evaluates from the player to move's perspective. After our move, it is the opponent's turn, so the returned score is negated. Good for the opponent means bad for us. The alpha and beta arguments also reverse signs and order; they describe the useful search window."
+      ]
+    },
+    {
+      "id": "deepening",
+      "chapter": 5,
+      "title": "Finish a useful answer before going deeper",
+      "subtitle": "Iterative deepening searches depth 1, then 2, then 3, and so on.",
+      "source": {
+        "file": "src\\chess\\engine\\Engine.java",
+        "slices": [
+          {"anchor": "for (int depth = 1; depth <= settings.maxDepth(); depth++)", "count": 11}
+        ]
+      },
+      "cards": [
+        ["Completed work wins", "Only a fully completed iteration replaces the current best result."],
+        ["Soft time budget", "Stop requests are checked cooperatively. Depth zero has a legal fallback."]
+      ],
+      "beats": [
+        "Instead of starting at the maximum depth, iterative deepening finishes shallow searches first. Each completed iteration becomes the current answer. It also suggests a promising move to try first in the next iteration, helping the deeper search work more efficiently.",
+        "If the time budget expires halfway through a depth, the engine keeps the last completed result. If no depth finishes, it still provides a legal fallback. The budget is soft because stop requests are checked at selected points, not enforced by interrupting every individual operation."
+      ]
+    },
+    {
+      "id": "finally",
+      "chapter": 5,
+      "title": "Cleanup belongs in finally",
+      "subtitle": "Search cancellation must not leave the working board halfway through a move.",
+      "source": {
+        "file": "src\\chess\\engine\\Engine.java",
+        "slices": [
+          {"anchor": "Position.Undo undo = position.makeMove(move);", "occurrence": 1, "count": 4},
+          {"anchor": "} finally {", "occurrence": 1, "count": 6},
+          {"anchor": "private void checkStop()", "count": 6}
+        ]
+      },
+      "cards": [
+        ["try / finally", "The finally block runs when the search returns or throws normally."],
+        ["Expected cancellation", "SearchStopped unwinds recursion; restoration still happens."]
+      ],
+      "beats": [
+        "Search temporarily changes the position and repetition history. If a stop request throws an exception deep in recursion, ordinary statements after the recursive call might never run. A finally block performs cleanup while the call stack unwinds.",
+        "Here, cleanup pops the history entry and unmakes the move. This is a general Java pattern: pair an operation with guaranteed cleanup, including exceptional exits. Expected cancellation is handled separately from real failures. Do not hide every exception; unexpected problems need visible reporting."
+      ]
+    },
+    {
+      "id": "pruning",
+      "chapter": 5,
+      "title": "Skip a branch that cannot help",
+      "subtitle": "Alpha-beta pruning preserves the completed fixed-depth search result.",
+      "visual": "pruning",
+      "cards": [
+        ["Already have +30", "A gives White a known alternative worth +30."],
+        ["B cannot beat it", "Black has a reply limiting B to +10. More replies cannot rescue B."]
+      ],
+      "beats": [
+        "Return to our small tree. White already has an option worth plus thirty. Under move B, we discover that Black can hold White to plus ten. We do not need to examine every other Black reply to know that B cannot improve White's decision.",
+        "Alpha and beta express these useful bounds. When the window closes, the code stops searching that branch. This is not random guessing. Given the same depth and evaluation rules, correct pruning preserves the score. Better move ordering often lets the engine discover these cutoffs sooner."
+      ]
+    },
+    {
+      "id": "ordering",
+      "chapter": 5,
+      "title": "Good ordering makes pruning useful",
+      "subtitle": "A comparator and a lambda express how moves should be ranked.",
+      "source": {
+        "file": "src\\chess\\engine\\Engine.java",
+        "slices": [
+          {"anchor": "private void orderMoves(", "count": 5},
+          {"anchor": "if (move.equals(preferred))", "count": 6}
+        ]
+      },
+      "cards": [
+        ["A lambda is a function", "move -> orderingScore(...) supplies behavior to the comparator."],
+        ["Promising moves first", "Previous best, promotions, captures, killer moves, and history."]
+      ],
+      "beats": [
+        "This lambda takes a move and produces an ordering score. The comparator sorts moves by that score, reversed so promising candidates come first. Lambdas let Java pass behavior into another method, much like an arrow function used as a callback in JavaScript.",
+        "Luke Fish prioritizes a preferred move, promotions, and captures, then uses remembered cutoff moves and a history heuristic. It also uses principal variation search: probe later moves with a narrow window, then search more fully if needed. These optimize searching; they do not redefine legal chess."
+      ]
+    },
+    {
+      "id": "quiescence",
+      "chapter": 5,
+      "title": "Do not stop in the middle of an exchange",
+      "subtitle": "Quiescence extends the main horizon through tactically noisy moves.",
+      "source": {
+        "file": "src\\chess\\engine\\Engine.java",
+        "slices": [
+          {"anchor": "int standingPat = Evaluator.evaluate(", "count": 12}
+        ]
+      },
+      "cards": [
+        ["The horizon problem", "A tempting capture may look good only because the recapture is unseen."],
+        ["Check changes the rule", "In check, search legal evasions, not just captures and promotions."]
+      ],
+      "beats": [
+        "Imagine evaluating immediately after winning a piece, before the opponent recaptures. The position can look misleadingly good. Quiescence follows captures and promotions beyond the ordinary depth limit, subject to its configured extension budget and the engine's safety limits.",
+        "When not in check, the current evaluation can serve as a baseline called standing pat. In check, doing nothing is not legal. The engine must consider evasions, including quiet moves, even when the capture extension is set to zero. Terminal positions are checked before trusting an evaluation."
+      ]
+    },
+    {
+      "id": "hashing",
+      "chapter": 6,
+      "title": "A compact fingerprint for a position",
+      "subtitle": "Zobrist hashing combines deterministic random keys with bitwise XOR.",
+      "source": {
+        "file": "src\\chess\\model\\Position.java",
+        "slices": [
+          {"anchor": "private void setPiece(int square, int piece)", "count": 9}
+        ]
+      },
+      "cards": [
+        ["long and XOR", "A 64-bit key can be updated as pieces leave and enter squares."],
+        ["Identity includes rules", "Pieces, side, castling rights, and legally available en passant."]
+      ],
+      "beats": [
+        "Different move orders can lead to the same position. To recognize positions quickly, Luke Fish builds a sixty four bit fingerprint called a Zobrist key. Java's long type holds it. Bitwise exclusive or combines piece and square keys; applying the same key twice cancels that contribution.",
+        "The full repetition key also includes the turn, castling rights, and legally available en passant. Move counters are not part of repetition identity. Hashing is fast, but not mathematically collision free. This is a compact lookup tool, not a perfect proof that two positions are identical."
+      ]
+    },
+    {
+      "id": "cache",
+      "chapter": 6,
+      "title": "A cached score has conditions",
+      "subtitle": "TranspositionTable is bounded; history-sensitive reuse protects draw rules.",
+      "source": {
+        "file": "src\\chess\\engine\\TranspositionTable.java",
+        "slices": [
+          {"anchor": "private final Entry[] entries", "count": 6},
+          {"anchor": "enum Bound", "count": 3},
+          {"anchor": "record Entry(", "count": 3}
+        ]
+      },
+      "cards": [
+        ["Not every score is exact", "An entry may be exact, a lower bound, or an upper bound."],
+        ["Check the context", "Score reuse checks key, depth, halfmove clock, and history fingerprint."]
+      ],
+      "beats": [
+        "The transposition table stores previous search information in a bounded array. Its entries include depth, score, a bound type, and the best move. A cutoff may prove only a lower or upper bound, so treating every stored number as exact would be incorrect.",
+        "The engine also checks the halfmove clock and a repetition history fingerprint before reusing a score. Identical boards can have different draw futures. A remembered move can still help ordering when that context differs. The lesson is broader than chess: cache validity depends on all relevant inputs."
+      ]
+    },
+    {
+      "id": "callbacks",
+      "chapter": 7,
+      "title": "The board reports; the controller decides",
+      "subtitle": "Swing components communicate through callbacks.",
+      "source": {
+        "file": "src\\chess\\ui\\ChessFrame.java",
+        "slices": [
+          {"anchor": "private final BoardPanel board", "count": 1},
+          {"anchor": "moveInput.addActionListener(", "count": 1},
+          {"anchor": "Move move = game.position().requireLegalMove(", "count": 7}
+        ]
+      },
+      "cards": [
+        ["Method references", "this::requestBoardMove passes a method as the board's callback."],
+        ["Inheritance + overrides", "BoardPanel extends JPanel and specializes painting and input."]
+      ],
+      "beats": [
+        "Board Panel extends Swing's J Panel, reusing the component framework and specializing painting and input. It reports requested squares through a callback; it cannot independently play a move. The method reference with two colons passes Chess Frame's request Board Move method as that callback.",
+        "The coordinate text field uses an action listener lambda. It asks the model for a legal move, then asks the controller to play it. An invalid move becomes a helpful input message. Painting, input handling, and rule validation remain separate even though the player experiences one action."
+      ]
+    },
+    {
+      "id": "threads",
+      "chapter": 7,
+      "title": "Keep thinking off the UI thread",
+      "subtitle": "Swing's event dispatch thread must remain free to handle input and painting.",
+      "visual": "threads",
+      "cards": [
+        ["EDT owns the live game", "Clicks, widgets, painting, and applying the chosen move."],
+        ["Worker owns a copy", "Search computes in doInBackground; process and done return to the EDT."]
+      ],
+      "beats": [
+        "Swing has an event dispatch thread, often called the E D T. If a long search ran there, clicks and painting would freeze. Chess Frame starts a Swing Worker instead. The worker searches a copied position using immutable settings and a history snapshot.",
+        "Do in Background performs computation on a background thread. Published progress reaches process on the event thread, and done handles completion there too. The UI and search do not mutate the same position. Ownership and message passing are often simpler than putting locks around every operation."
+      ]
+    },
+    {
+      "id": "stale",
+      "chapter": 7,
+      "title": "Cancellation needs a freshness check",
+      "subtitle": "Undoing a move must also invalidate any search for the old position.",
+      "source": {
+        "file": "src\\chess\\ui\\ChessFrame.java",
+        "slices": [
+          {"anchor": "if (revision != searchRevision)", "count": 3},
+          {"anchor": "private void cancelSearch(String reason)", "count": 8}
+        ]
+      },
+      "cards": [
+        ["AtomicBoolean", "Makes the stop signal safely visible across threads."],
+        ["Revision token", "An obsolete worker cannot apply a result to a newer game."]
+      ],
+      "beats": [
+        "Stopping a worker is not enough by itself. A result may already be finishing when the user chooses Undo or New game. Chess Frame increments a revision number. A worker remembers its starting revision and rejects completion if that revision is no longer current.",
+        "Atomic Boolean carries the cooperative stop request between threads. Move now sets that signal but preserves the usable result. Undo also cancels and invalidates the worker. These are intentionally different behaviors: one wants the best completed move; the other wants no old move applied at all."
+      ]
+    },
+    {
+      "id": "journey",
+      "chapter": 8,
+      "title": "Follow e2e4 from end to end",
+      "subtitle": "The engine is a pipeline of small, typed responsibilities.",
+      "visual": "journey",
+      "cards": [
+        ["The player's move", "Input -> legal Move -> Game.play -> history and repaint."],
+        ["The computer's reply", "Snapshot -> search -> SearchResult -> revision check -> play."]
+      ],
+      "beats": [
+        "Put the pieces together. The player enters E two, E four. Square helpers interpret coordinates. Legal move generation finds the matching Move record. Game applies it and updates history and results. Chess Frame refreshes the display and decides whether the computer should respond.",
+        "A copied position enters search. Recursive exploration calls evaluation, uses ordering and caching, and eventually returns a Search Result record. Back on the event thread, the revision check protects the live game before the result is played. Each boundary has a clear Java type and a clear responsibility."
+      ]
+    },
+    {
+      "id": "tests",
+      "chapter": 8,
+      "title": "Tests are executable explanations",
+      "subtitle": "Run .\\build.ps1 -Test, or run chess.ChessTests in Eclipse.",
+      "source": {
+        "file": "test\\chess\\ChessTests.java",
+        "slices": [
+          {"anchor": "private static void startingPerft()", "count": 8}
+        ]
+      },
+      "cards": [
+        ["Perft counts paths", "20, 400, 8,902, and 197,281 legal sequences through four plies."],
+        ["Check the contracts", "Undo restoration, special moves, search consistency, and cancellation."]
+      ],
+      "beats": [
+        "Perft counts legal move sequences without search pruning or draw adjudication. From the starting position, the first four counts are twenty, four hundred, eight thousand nine hundred two, and one hundred ninety seven thousand two hundred eighty one. Those precise numbers reveal subtle rule mistakes.",
+        "Other tests verify undo restoration, position hashes, special moves, and agreement with a simpler reference search. Think of a test as an executable promise. If move counts change unexpectedly, inspect legality and make or unmake before adjusting evaluation weights. A stronger sounding preference cannot fix a broken rule."
+      ]
+    },
+    {
+      "id": "debug",
+      "chapter": 8,
+      "title": "Debug one small question at a time",
+      "subtitle": "Begin with coordinates and rules, not the deepest search call.",
+      "visual": "debug",
+      "cards": [
+        ["Inspect, predict, step", "Try Square.parse, Position.makeMove, or Evaluator.explain."],
+        ["Remember real time", "A search deadline keeps advancing while the debugger is paused."]
+      ],
+      "beats": [
+        "Set a breakpoint in Square dot parse and enter a move. Inspect the input string and resulting indices. Next, stop in make Move and compare the board before and after. In Eclipse, F five steps in, F six steps over, and F eight resumes.",
+        "Use a conditional breakpoint to focus on one source square. Search time still passes while the debugger is paused, so start shallow and allow a larger budget. Model tests are better for leisurely stepping. Read the first compiler error first; later errors may simply be consequences."
+      ]
+    },
+    {
+      "id": "experiment",
+      "chapter": 8,
+      "title": "Make one prediction. Change one thing.",
+      "subtitle": "Understanding grows fastest when a small experiment has a clear result.",
+      "visual": "experiment",
+      "cards": [
+        ["Try an ordering experiment", "Same FEN, depth, weights, and quiescence. Randomness zero. Compare nodes."],
+        ["Then change the code", "Print square names, extend an undo test, or adjust a placement preference."]
+      ],
+      "beats": [
+        "Try this experiment: analyze the same position with move ordering enabled and disabled. Keep depth, evaluation, and quiescence fixed, with randomness zero and enough time to finish. At the same completed depth, scores should agree, though tied best moves can differ. Compare visited nodes, not just elapsed time.",
+        "Then make one small code change and add a focused check. You have now seen types, objects, records, collections, loops, recursion, exceptions, callbacks, and concurrency working together. Luke Fish is a classical educational engine, not Stockfish. Its greatest feature is that you can understand and change the system yourself."
+      ]
+    }
+  ]
+}

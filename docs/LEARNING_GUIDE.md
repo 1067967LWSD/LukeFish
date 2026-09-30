@@ -4,9 +4,10 @@ This guide assumes you have written JavaScript in a high-school programming
 class. You do **not** need to understand all the chess engine at once. Work
 through a small feature, change it, predict what will happen, and play.
 
-The order below also gives each future narrated walkthrough a self-contained
-system, visible demonstration, breakpoint, and exercise. The repository does
-not generate videos or TTS audio yet.
+The order below gives each lesson a self-contained system, visible demonstration,
+breakpoint, and exercise. The [narrated video walkthrough](VIDEO.md) follows this
+sequence with actual code excerpts, diagrams, local TTS audio, and captions.
+Its editable script is in `tools\video\lesson.json`.
 
 ## Java ideas you already half-know
 

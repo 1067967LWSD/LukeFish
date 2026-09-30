@@ -1,5 +1,6 @@
 package chess.ui;
 
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -20,13 +21,17 @@ import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.BiConsumer;
 
 import javax.swing.AbstractAction;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
+import javax.swing.Timer;
 
+import chess.model.Game;
 import chess.model.Move;
 import chess.model.Piece;
 import chess.model.Position;
@@ -43,9 +48,13 @@ public final class BoardPanel extends JPanel {
     private static final Color DARK = new Color(104, 143, 128);
     private static final Color ACCENT = new Color(32, 119, 174);
     private static final int MARGIN = 28;
+    private static final long FEEDBACK_NANOS = 3_000_000_000L;
+    private static final long FEEDBACK_FADE_NANOS = 500_000_000L;
 
     private final BiConsumer<Integer, Integer> moveRequest;
     private final String pieceFont;
+    private final List<MoveFeedback> moveFeedback = new ArrayList<>(2);
+    private final Timer feedbackTimer = new Timer(40, event -> advanceMoveFeedback());
     private Position position = Position.initial();
     private List<Move> legalMoves = List.of();
     private Move lastMove;
@@ -63,7 +72,8 @@ public final class BoardPanel extends JPanel {
         setBackground(new Color(245, 246, 244));
         setPreferredSize(new Dimension(640, 640));
         setMinimumSize(new Dimension(340, 340));
-        setToolTipText("Click a piece, then a marked square. Keyboard: arrows, Enter or Space, Escape.");
+        setToolTipText("Click a piece, then a marked square. Keyboard: arrows, Enter or Space, Escape."
+                + " Move flashes show static score changes; positive helps the player who moved.");
         getAccessibleContext().setAccessibleName("Chess board");
         addMouseListener(new MouseAdapter() {
             @Override
@@ -115,11 +125,20 @@ public final class BoardPanel extends JPanel {
         if (!enabled) {
             selected = -1;
         }
+        updateAccessibleDescription();
+        repaint();
+    }
+
+    private void updateAccessibleDescription() {
+        StringBuilder feedback = new StringBuilder();
+        for (MoveFeedback item : moveFeedback) {
+            feedback.append(' ').append(item.description());
+        }
         getAccessibleContext().setAccessibleDescription(
                 Piece.colorName(position.sideToMove()) + " to move. "
-                + (enabled ? "Board input enabled." : "Board input disabled while the computer plays.")
-                + " Arrow keys move the cursor; Enter selects. Coordinate entry is also available below the board.");
-        repaint();
+                + (inputEnabled ? "Board input enabled." : "Board input disabled while the computer plays.")
+                + " Arrow keys move the cursor; Enter selects. Coordinate entry is also available below the board."
+                + feedback);
     }
 
     public void setFlipped(boolean flipped) {
@@ -134,6 +153,41 @@ public final class BoardPanel extends JPanel {
     public void setHint(Move hint) {
         this.hint = hint;
         repaint();
+    }
+
+    public void showMoveFeedback(Game.PlayedMove move, int beforeWhiteCp, int afterWhiteCp) {
+        long now = System.nanoTime();
+        // Separate lifetimes keep a fast computer reply from hiding the player's move.
+        moveFeedback.removeIf(item -> item.move().color() == move.color()
+                || now - item.startedNanos() >= FEEDBACK_NANOS);
+        moveFeedback.add(new MoveFeedback(move, beforeWhiteCp, afterWhiteCp, now));
+        updateAccessibleDescription();
+        feedbackTimer.start();
+        repaint();
+    }
+
+    public void clearMoveFeedback() {
+        feedbackTimer.stop();
+        moveFeedback.clear();
+        updateAccessibleDescription();
+        repaint();
+    }
+
+    private void advanceMoveFeedback() {
+        long now = System.nanoTime();
+        if (moveFeedback.removeIf(item -> now - item.startedNanos() >= FEEDBACK_NANOS)) {
+            updateAccessibleDescription();
+        }
+        if (moveFeedback.isEmpty()) {
+            feedbackTimer.stop();
+        }
+        repaint();
+    }
+
+    @Override
+    public void removeNotify() {
+        clearMoveFeedback();
+        super.removeNotify();
     }
 
     /** Both painting and mouse input use the same geometry, including rotation. */
@@ -245,8 +299,79 @@ public final class BoardPanel extends JPanel {
                 g.setStroke(new BasicStroke(3));
                 g.drawRect(box.x + 3, box.y + 3, box.width - 6, box.height - 6);
             }
+            paintMoveFeedback(g);
         } finally {
             g.dispose();
+        }
+    }
+
+    private void paintMoveFeedback(Graphics2D graphics) {
+        int width = Math.min(370, Math.max(1, getWidth() - 24));
+        int height = 100;
+        int gap = 10;
+        int x = (getWidth() - width) / 2;
+        int y = (getHeight() - (height + gap) * moveFeedback.size() + gap) / 2;
+        long now = System.nanoTime();
+        for (MoveFeedback item : moveFeedback) {
+            float opacity = Math.max(0, Math.min(1,
+                    (FEEDBACK_NANOS - (now - item.startedNanos())) / (float) FEEDBACK_FADE_NANOS));
+            Graphics2D g = (Graphics2D) graphics.create();
+            try {
+                g.setComposite(AlphaComposite.SrcOver.derive(opacity));
+                g.setColor(new Color(0, 0, 0, 55));
+                g.fillRoundRect(x, y + 4, width, height, 18, 18);
+                g.setColor(new Color(25, 42, 48, 245));
+                g.fillRoundRect(x, y, width, height, 18, 18);
+                Color accent = item.deltaCp() > 0 ? new Color(126, 235, 180)
+                        : item.deltaCp() < 0 ? new Color(255, 159, 149) : new Color(219, 233, 241);
+                g.setColor(accent);
+                g.setStroke(new BasicStroke(2));
+                g.drawRoundRect(x + 1, y + 1, width - 2, height - 2, 18, 18);
+                paintFeedbackText(g, item.deltaText(), Font.BOLD, 34, x, y + 59, width);
+                g.setColor(new Color(236, 244, 241));
+                paintFeedbackText(g, item.heading() + " - static change", Font.BOLD, 14, x, y + 23, width);
+                paintFeedbackText(g, item.evaluationText(), Font.PLAIN, 12, x, y + 84, width);
+            } finally {
+                g.dispose();
+            }
+            y += height + gap;
+        }
+    }
+
+    private static void paintFeedbackText(Graphics2D g, String text, int style, int size,
+            int x, int baseline, int width) {
+        Font font = new Font(Font.SANS_SERIF, style, size);
+        int textWidth = g.getFontMetrics(font).stringWidth(text);
+        if (textWidth > width - 24) {
+            font = font.deriveFont(Math.max(1f, size * Math.max(1, width - 24) / (float) textWidth));
+        }
+        g.setFont(font);
+        g.drawString(text, x + (width - g.getFontMetrics().stringWidth(text)) / 2, baseline);
+    }
+
+    private record MoveFeedback(Game.PlayedMove move, int beforeWhiteCp, int afterWhiteCp, long startedNanos) {
+        int deltaCp() {
+            return (afterWhiteCp - beforeWhiteCp) * move.color();
+        }
+
+        String heading() {
+            return Piece.colorName(move.color()) + " " + move.number()
+                    + (move.color() == Piece.WHITE ? ". " : "... ") + move.notation();
+        }
+
+        String deltaText() {
+            return String.format(Locale.ROOT, "%+.2f pawns", deltaCp() / 100.0);
+        }
+
+        String evaluationText() {
+            return String.format(Locale.ROOT, "Static eval for %s: %+.2f -> %+.2f",
+                    Piece.colorName(move.color()), beforeWhiteCp * move.color() / 100.0,
+                    afterWhiteCp * move.color() / 100.0);
+        }
+
+        String description() {
+            return heading() + ": " + deltaText() + " (static change for "
+                    + Piece.colorName(move.color()) + "). " + evaluationText() + ".";
         }
     }
 

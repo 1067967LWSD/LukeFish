@@ -125,7 +125,10 @@ weight smoothly blends middlegame and endgame preferences instead of abruptly
 switching modes.
 
 **Demo:** pause the engine, load the same position twice, and change only the
-material percentage. Read the component totals after a move.
+material percentage. Read the component totals after a move and compare the
+large move-delta flashes. Each flash subtracts the static evaluation before
+the move from the one after it, then converts to the mover's perspective.
+It does not search ahead, so a sacrifice can initially look unfavorable.
 
 **Breakpoint:** `Evaluator.explain`. Inspect `material`, `placement`,
 `mobility`, `pawns`, `kings`, and `tempo`.
@@ -135,7 +138,9 @@ improves one chosen position without making another clearly worse. An idea
 that sounds good is not automatically a good evaluation term.
 
 **Important:** internal evaluation favors the side whose turn it is. Displayed
-scores always favor White. Find the multiplication that converts between them.
+position/search scores favor White; move flashes favor the player who just
+moved (positive helps that player, even for Black). Find the multiplications
+that convert between these perspectives in `ChessFrame` and `BoardPanel`.
 
 ## 6. Think ahead with recursion
 

@@ -95,7 +95,8 @@ public final class ChessFrame extends JFrame {
         buildLayout();
         wireControls();
         refreshView();
-        appendLog("Welcome to LukeFish. Scores favor White; 100 centipawns (cp) is about one pawn."
+        appendLog("Welcome to LukeFish. Position/search scores favor White; 100 centipawns (cp) is about one pawn."
+                + "\nMove flashes show the static score change for the player who moved; positive helps that player."
                 + "\nPV = principal variation: the engine's predicted best line."
                 + "\nChoose First steps for a gentler opponent, or open the Guide tab.");
         Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
@@ -233,6 +234,7 @@ public final class ChessFrame extends JFrame {
         settingsPanel.setOnChange(() -> {
             boolean wasAnalysis = worker != null && !workerPlaysMove;
             cancelSearch("Engine settings changed.");
+            board.clearMoveFeedback();
             appendLog("Settings: " + settingsPanel.settings());
             refreshView();
             if (wasAnalysis && !game.outcome().isOver()) {
@@ -315,11 +317,15 @@ public final class ChessFrame extends JFrame {
     }
 
     private void playMove(Move move) {
+        EngineSettings settings = settingsPanel.settings();
+        int beforeScore = Evaluator.explain(game.position(), settings.weights()).total();
         Game.PlayedMove played = game.play(move);
+        Evaluator.Breakdown afterScore = Evaluator.explain(game.position(), settings.weights());
         appendLog(played.number() + (played.color() == Piece.WHITE ? ". " : "... ")
                 + Piece.colorName(played.color()) + ": " + played.notation() + " [" + move.toUci() + "]"
-                + "\n" + Evaluator.explain(game.position(), settingsPanel.settings().weights()));
+                + "\n" + afterScore);
         refreshView();
+        board.showMoveFeedback(played, beforeScore, afterScore.total());
         if (game.outcome().isOver()) {
             appendLog(game.outcome().description());
         } else {
@@ -461,6 +467,7 @@ public final class ChessFrame extends JFrame {
         game = new Game();
         moveInput.setText("");
         board.setHint(null);
+        board.clearMoveFeedback();
         appendLog("\n--- New game ---");
         refreshView();
         maybeStartComputer();
@@ -486,6 +493,7 @@ public final class ChessFrame extends JFrame {
             paused.setSelected(true);
         }
         board.setHint(null);
+        board.clearMoveFeedback();
         appendLog("Undo -> " + game.position().toFen());
         refreshView();
     }
@@ -506,6 +514,7 @@ public final class ChessFrame extends JFrame {
             paused.setSelected(true);
             moveInput.setText("");
             board.setHint(null);
+            board.clearMoveFeedback();
             appendLog("\nLoaded FEN (history starts here): " + game.position().toFen());
             refreshView();
         } catch (IllegalArgumentException exception) {
@@ -607,10 +616,15 @@ public final class ChessFrame extends JFrame {
                 + "<p>The table and ordering switches change efficiency, not chess rules. "
                 + "Evaluation weights change the engine's priorities. Try disabling material!</p>"
                 + "<h3>Read its thoughts</h3>"
-                + "<p>Positive scores favor White; negative favor Black. <b>+1.00</b> is roughly a pawn, "
+                + "<p>Positive position/search scores favor White; negative favor Black. <b>+1.00</b> is roughly a pawn, "
                 + "not a winning probability. <b>+M3</b> means a predicted White mate in three moves. "
                 + "<b>Depth</b> counts plies (one player's move); <b>nodes</b> count explored positions. "
                 + "<b>PV</b> is the predicted best line, not a promise. Cached lines may be shorter than the depth.</p>"
+                + "<p><b>Move flashes:</b> each move shows a large, signed score change over the board for three seconds. "
+                + "Positive (green) helps the player who moved; negative (red) hurts that player, including when playing Black. "
+                + "The before/after scores in the flash also favor that player. These are immediate <b>static</b> evaluations "
+                + "using the current weights, not a search verdict on move quality. A fast reply does not hide your flash, "
+                + "and flashes do not block board input.</p>"
                 + "<p><b>Analyze</b> shows a blue hint without moving. <b>Move now</b> uses the last completed depth. "
                 + "<b>Pause</b> cancels thinking and lets you play either side.</p>"
                 + "<h3>Repeat an experiment</h3>"
@@ -657,6 +671,7 @@ public final class ChessFrame extends JFrame {
     public void dispose() {
         closing = true;
         cancelSearch("Window closed.");
+        board.clearMoveFeedback();
         super.dispose();
     }
 }

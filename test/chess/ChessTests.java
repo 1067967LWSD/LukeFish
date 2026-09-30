@@ -14,8 +14,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 
 import chess.engine.Engine;
 import chess.engine.EngineSettings;
@@ -59,6 +61,7 @@ public final class ChessTests {
         run("Engine self-play legality and thinking lines", ChessTests::selfPlay);
         run("Deadlines and cross-thread cancellation", ChessTests::cancellation);
         run("Board geometry, mouse, keyboard, and offscreen painting", ChessTests::boardInput);
+        run("Move deltas, non-blocking flashes, and independent expiry", ChessTests::moveFeedback);
         System.out.println("PASS: " + groups + " groups, " + checks + " checks.");
     }
 
@@ -502,6 +505,101 @@ public final class ChessTests {
         Rectangle bounds = board.squareBounds(Square.parse(square));
         board.dispatchEvent(new MouseEvent(board, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), 0,
                 (int) bounds.getCenterX(), (int) bounds.getCenterY(), 1, false, MouseEvent.BUTTON1));
+    }
+
+    private static void moveFeedback() throws Exception {
+        AtomicReference<BoardPanel> panel = new AtomicReference<>();
+        AtomicReference<Timer> delayedReply = new AtomicReference<>();
+        CountDownLatch whiteExpired = new CountDownLatch(1);
+        CountDownLatch bothExpired = new CountDownLatch(1);
+        try {
+            SwingUtilities.invokeAndWait(() -> {
+                List<String> requested = new ArrayList<>();
+                BoardPanel board = new BoardPanel((from, to) -> requested.add(Square.name(from) + Square.name(to)));
+                panel.set(board);
+                board.setSize(340, 340);
+                Game game = new Game();
+                Game.PlayedMove white = game.play(game.position().requireLegalMove("e2e4"));
+                board.setGameState(game.position(), game.position().legalMoves(), white.move(), true);
+                board.showMoveFeedback(white, 50, 175);
+                check(feedback(board).contains("White 1. e4: +1.25 pawns (static change for White)."
+                        + " Static eval for White: +0.50 -> +1.75."), "White delta and before/after scores");
+                click(board, "e7");
+                click(board, "e5");
+                equal(List.of("e7e5"), requested, "Flashes do not intercept mouse moves");
+                invokeBoardAction(board, "cursor-up");
+                invokeBoardAction(board, "cursor-up");
+                invokeBoardAction(board, "choose-square");
+                invokeBoardAction(board, "cursor-down");
+                invokeBoardAction(board, "cursor-down");
+                invokeBoardAction(board, "choose-square");
+                equal(List.of("e7e5", "e7e5"), requested, "Flashes do not intercept keyboard moves");
+
+                Game.PlayedMove black = game.play(game.position().requireLegalMove("e7e5"));
+                board.setGameState(game.position(), game.position().legalMoves(), black.move(), true);
+                board.showMoveFeedback(black, 175, 50);
+                check(feedback(board).contains("White 1. e4:"), "A rapid reply retains the player's flash");
+                check(feedback(board).contains("Black 1... e5: +1.25 pawns (static change for Black)."
+                        + " Static eval for Black: -1.75 -> -0.50."), "Black improvement has a positive delta");
+                board.showMoveFeedback(black, 50, 75);
+                check(feedback(board).contains("Black 1... e5: -0.25 pawns"), "Black loss has a negative delta");
+                Game.PlayedMove nextWhite = game.play(game.position().requireLegalMove("g1f3"));
+                board.showMoveFeedback(nextWhite, 75, 25);
+                check(feedback(board).contains("White 2. Nf3: -0.50 pawns"), "White loss has a negative delta");
+                check(!feedback(board).contains("White 1. e4:"), "Newer moves replace only the same side's flash");
+                board.showMoveFeedback(nextWhite, 25, 25);
+                check(feedback(board).contains("White 2. Nf3: +0.00 pawns"), "Unchanged score is neutral");
+                board.setFlipped(true);
+                board.setGameState(game.position(), game.position().legalMoves(), nextWhite.move(), true);
+                check(feedback(board).contains("White 2. Nf3: +0.00 pawns"), "Flipping and refreshing retain feedback");
+
+                BufferedImage image = new BufferedImage(340, 340, BufferedImage.TYPE_INT_RGB);
+                Graphics2D graphics = image.createGraphics();
+                try {
+                    board.paint(graphics);
+                    int withFlash = image.getRGB(20, 120);
+                    board.clearMoveFeedback();
+                    board.paint(graphics);
+                    check(withFlash != image.getRGB(20, 120), "Flashes visibly paint over the board at small sizes");
+                } finally {
+                    graphics.dispose();
+                }
+                check(!feedback(board).contains("static change for"), "Clearing removes accessible feedback");
+                board.showMoveFeedback(white, 50, 175);
+                board.removeNotify();
+                check(!feedback(board).contains("static change for"), "Removing the board clears its timer and feedback");
+
+                board.showMoveFeedback(white, 50, 175);
+                board.getAccessibleContext().addPropertyChangeListener(event -> {
+                    String description = feedback(board);
+                    if (!description.contains("White 1. e4:") && description.contains("Black 1... e5:")) {
+                        whiteExpired.countDown();
+                    }
+                    if (!description.contains("static change for")) {
+                        bothExpired.countDown();
+                    }
+                });
+                Timer reply = new Timer(1_000, event -> board.showMoveFeedback(black, 175, 50));
+                reply.setRepeats(false);
+                delayedReply.set(reply);
+                reply.start();
+            });
+            check(whiteExpired.await(5, TimeUnit.SECONDS), "Older flash expires without removing the newer reply");
+            check(bothExpired.await(3, TimeUnit.SECONDS), "Feedback fades and expires without further moves");
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (delayedReply.get() != null) {
+                    delayedReply.get().stop();
+                }
+                if (panel.get() != null) {
+                    panel.get().clearMoveFeedback();
+                }
+            });
+        }
+    }
+
+    private static String feedback(BoardPanel board) {
+        return board.getAccessibleContext().getAccessibleDescription();
     }
 
     private static void invokeBoardAction(BoardPanel board, String name) {

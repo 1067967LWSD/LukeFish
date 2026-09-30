@@ -113,10 +113,23 @@ opening book, neural network, or endgame tablebase.
 
 ## Read the thinking panel
 
-**All displayed scores favor White:** positive means White is preferred,
+**Position and search scores favor White:** positive means White is preferred,
 negative means Black. `+1.00` is roughly a pawn, **not a win probability**.
 `+M3` means a predicted White mate in three moves; `-M3` favors Black.
 Internally, negamax uses the side-to-move's perspective; the UI converts it.
+
+**Each move flashes its score change over the board for three seconds.** The
+large signed delta is in pawns, from **the moving player's perspective**:
+positive/green helps that player, negative/red hurts, and zero is neutral.
+The move and its before/after scores are labeled with that player's color.
+Your flash stays visible alongside a quick computer reply, without blocking
+mouse or keyboard play.
+
+Move flashes compare the engine's **static evaluation** immediately before and
+after the move, using the same current evaluation weights (including tempo).
+They are instant feedback on the board, **not** a searched move-quality grade:
+a sacrifice can look worse before the engine explores its continuation.
+Undo, new game, FEN loading, and settings changes clear old flashes.
 
 Depth is measured in **plies**, one player's move. Nodes count visited search
 positions, and `n/s` is average nodes per second. **PV** (principal variation)
@@ -197,10 +210,12 @@ In Eclipse, run `chess.ChessTests` as a Java application, or use
 `Chess tests.launch`. The tests cover published perft counts, make/unmake and
 hash restoration, special moves, notation, results, repetition, evaluation
 knobs, tactics, cache/order equivalence, deadlines, cross-thread cancellation,
-exhaustive reference search, self-play, and headless board rendering/input.
+exhaustive reference search, self-play, and headless board rendering/input and
+move-delta feedback.
 
 `chess.UiSmokeTest` additionally requires a desktop display. It opens and closes
 a real Swing window and drives mouse/coordinate entry, engine replies, undo,
-settings changes, FEN/promotion dialogs, analysis, and stale-result rejection.
+settings changes, FEN/promotion dialogs, analysis, move flashes, and stale-result
+rejection.
 An optional filename argument saves a rendered PNG. It never uses a network
 service or an external chess engine.
